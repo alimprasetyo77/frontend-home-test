@@ -4,6 +4,7 @@ import { IUser } from "@/types/auth-type";
 import { createContext, useState, useContext, useEffect, PropsWithChildren } from "react";
 import { toast } from "sonner";
 import { setCookie, deleteCookie, getCookie } from "cookies-next/client";
+import { setAxiosConfig } from "@/lib/axios-config";
 
 interface Context {
   user: IUser | null;
@@ -23,13 +24,15 @@ const AuthContext = createContext<Context>(contextValue);
 
 export function AuthProvider({ children }: PropsWithChildren) {
   const [user, setUser] = useState<IUser | null>(null);
-  const [token, setToken] = useState(getCookie("token") ?? "");
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (!token || token === "") return;
+    const tokenFromCookie = getCookie("token");
+
+    if (!tokenFromCookie) return;
+    setAxiosConfig(tokenFromCookie);
     fetchProfile();
-  }, [token]);
+  }, []);
 
   const fetchProfile = async () => {
     setIsLoading(true);
@@ -44,9 +47,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
   };
 
   const changeToken = (token?: string) => {
-    setToken(token ?? "");
+    setAxiosConfig(token ?? "");
     if (token) {
       setCookie("token", token);
+      fetchProfile();
     } else {
       deleteCookie("token");
       setUser(null);

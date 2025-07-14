@@ -1,7 +1,10 @@
 import axios from "axios";
-import { getCookie } from "cookies-next";
 
-const bearerToken = getCookie("token") ?? "";
+let bearerToken = "";
+
+export const setAxiosConfig = (token: string) => {
+  bearerToken = token;
+};
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
