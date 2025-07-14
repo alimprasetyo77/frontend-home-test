@@ -1,0 +1,139 @@
+"use client";
+
+import CardArticle from "@/components/card-article";
+import CustomPagination from "@/components/custom-pagination";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getArticles } from "@/services/article-service";
+import { getCategories } from "@/services/category-service";
+import { IArticle } from "@/types/article-type";
+import { ICategory } from "@/types/category-type";
+import { Search } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { useDebounce } from "use-debounce";
+
+export default function Articles() {
+  const [limit] = useState(9);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(Number(1));
+
+  const [search, setSearch] = useState("");
+  const [debounceValue] = useDebounce(search, 500);
+  const [category, setCategory] = useState("");
+
+  const [articles, setArticles] = useState<IArticle[]>([]);
+  const [categories, setCategories] = useState<ICategory[]>([]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const result = await getCategories();
+      setCategories(result.data);
+    } catch (error) {
+      toast.error((error as Error).message);
+    }
+  };
+  const fetchArticles = async (params: { page: number; search?: string; category?: string }) => {
+    try {
+      const result = await getArticles({
+        limit,
+        page: params.page,
+        title: params.search,
+        category: params.category,
+      });
+      setArticles(result.data);
+      setTotal(result.total);
+      setPage(result.page);
+    } catch (error) {
+      toast.error((error as Error).message);
+    }
+  };
+
+  useEffect(() => {
+    fetchArticles({ page: 1, search: debounceValue, category });
+  }, [debounceValue]);
+
+  useEffect(() => {
+    fetchArticles({ page: 1, search: debounceValue, category });
+  }, [category]);
+
+  const handleCategoryChange = (val: string) => {
+    if (val.startsWith("all-categories")) {
+      setCategory("");
+    } else {
+      setCategory(val);
+    }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage === page) return;
+    fetchArticles({ page: newPage, search, category });
+  };
+
+  return (
+    <div className="min-h-screen">
+      <section className="min-h-[560px] md:min-h-[500px] bg-[#2563EBDB] bg-blend-overlay bg-center bg-cover bg-[url('/images/hero-background.jpg')] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-10  max-w-[337px] sm:max-w-[730px]">
+          <div className="w-full flex items-center justify-center flex-col text-white gap-3">
+            <h1 className="font-bold text-sm md:text-base">Blog genzet</h1>
+            <p className="text-medium text-4xl md:text-5xl text-center leading-[40px] md:leading-[48px] ">
+              The Journal : Design Resources, Interviews, and Industry News
+            </p>
+            <span className="text-xl md:text-2xl">Your daily dose of design insights!</span>
+          </div>
+
+          <div className="flex flex-col md:flex-row items-center gap-2 w-full! max-w-[608px] min-h-[60px] p-2.5 bg-[#3B82F6] rounded-[12px]">
+            <Select onValueChange={handleCategoryChange}>
+              <SelectTrigger className="w-full md:w-[180px] bg-white">
+                <SelectValue placeholder="Select Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem key={"all-categories"} value={"all-categories"}>
+                  All Categories
+                </SelectItem>
+                {categories.map((category) => {
+                  if (!Boolean(category.id)) return;
+                  return (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+            <div className="flex items-center bg-white rounded-[6px] overflow-hidden w-full grow">
+              <Search className="ml-2 size-4 text-muted-foreground" />
+              <Input
+                className="bg-transparent border-none ring-0 focus-visible:ring-0 text-sm md:text-base"
+                placeholder="Search articles"
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-10 px-5 md:p-16">
+        <div className="container mx-auto space-y-8">
+          <h3 className="hidden md:block text-slate-600 font-medium">
+            Showing : {Math.min(page * limit, total)} of {total} articles
+          </h3>
+          <div className=" grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8">
+            {articles.map((article) => (
+              <CardArticle key={article.id} data={article} />
+            ))}
+          </div>
+          <CustomPagination
+            page={page}
+            totalPages={Math.ceil(total / limit)}
+            onPageChange={handlePageChange}
+          />
+        </div>
+      </section>
+    </div>
+  );
+}
