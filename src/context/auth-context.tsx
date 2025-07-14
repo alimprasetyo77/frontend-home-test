@@ -25,10 +25,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [user, setUser] = useState<IUser | null>(null);
   const [token, setToken] = useState(getCookie("token") ?? "");
   const [isLoading, setIsLoading] = useState(false);
+
   useEffect(() => {
-    if (token) {
-      fetchProfile();
-    }
+    if (!token || token === "") return;
+    fetchProfile();
   }, [token]);
 
   const fetchProfile = async () => {
