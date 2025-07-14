@@ -10,8 +10,7 @@
 - ✅ shadcn/ui components
 - ✅ Tiptap Editor
 - ✅ React Hook Form + Zod
-- ✅ Role-based Auth (Admin & User)
-- ✅ Protected Routes & Middleware
+- ✅ Axios
 
 ---
 
